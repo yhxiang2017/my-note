@@ -16,17 +16,17 @@ static final int MAXIMUM_CAPACITY = 1 << 30;
 // 默认加载因子
 static final float DEFAULT_LOAD_FACTOR = 0.75f;
 
-// 链表的最大长度 - 暂时的理解	todo
+// 链表的长度大于8，去执行树化。但要与 MIN_TREEIFY_CAPACITY 共同判断。
 static final int TREEIFY_THRESHOLD = 8;
 
-// 树的最小长度 - 暂时的理解 todo
+// 树转化为链表的最小长度
 static final int UNTREEIFY_THRESHOLD = 6;
 
-// 树的最小容量 - 跟上俩个有点矛盾。暂时先不追究树这块的变量 todo
+// 当table的长度大于等于64时，才执行树化。由下图可以看到，小于64时，会对HashMap进行扩容。
 static final int MIN_TREEIFY_CAPACITY = 64;
 ```
 
-
+![image-20201208093313731](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208093313731.png)
 
 ## 成员变量
 
@@ -263,26 +263,60 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 }
 ```
 
-① 判断当前table是否初始化，如果未初始化，则调用resize() 进行初始化后再执行后续操作
-② 判断当前槽位是否为null，为null说明没有发生过hash碰撞，直接newNode()赋值。
-③ 进入else分支，说明发生了hash碰撞，需要进一步比较，首先依据传入的key与链表第一个节点key是否相等，相等赋值给临时变量，直接进入第⑥步
-④ 其次判断是否是树，是则用树的方式插入，然后返回当前节点 **TODO** ，进入第⑥步
-⑤ 循环链表，找到相等的key，则结束循环进入第⑥步。没有则在链表末端插入，然后判断链表是否可以转化为树**TODO**
-⑥ 是否替换旧值为新值，默认替换掉
-⑦ 判断是否达到扩容条件
-⑧ 不知道啥意思，哈哈哈**TODO**
+① 判断当前table是否初始化，如果未初始化，则调用resize() 进行初始化后再执行后续操作  
+② 判断当前槽位是否为null，为null说明没有发生过hash碰撞，直接newNode()赋值。  
+③ 进入else分支，说明发生了hash碰撞，需要进一步比较，首先依据传入的key与链表第一个节点key是否相等，相等赋值给临时变量，直接进入第⑥步  
+④ 其次判断是否是树，是则用树的方式插入，然后返回当前节点 **TODO** ，进入第⑥步  
+⑤ 循环链表，找到相等的key，则结束循环进入第⑥步。没有则在链表末端插入，然后判断链表是否可以转化为树**TODO ** 
+⑥ 是否替换旧值为新值，默认替换掉  
+⑦ 判断是否达到扩容条件  
+⑧ 不知道啥意思，哈哈哈**TODO**  
 
 
 
 #### 假如容量为16并且key的分布均匀，不会发生碰撞，每个key都只占一个槽位。分析下put()函数
 
-第一步只会在第一次put时进行初始化。
+第一步只会在第一次put时进行初始化。  
 
-第二步每次都进入，并不会进入else分支。
+第二步每次都进入，并不会进入else分支。  
 
-最后直接来到第七步，判断是否达到扩容条件，此时的HashMap就好像是一个数组而已，对内存的利用率不高，会导致频繁扩容，但这只是我们的假如，哈哈哈哈。
+最后直接来到第七步，判断是否达到扩容条件，此时的HashMap就好像是一个数组而已，对内存的利用率不高，会导致频繁扩容，但这只是我们的假如，哈哈哈哈。  
 
 #### 假如初始容量很小，导致一直发生碰撞，分析下put()函数
+
+第一步只会在第一次put时进行初始化。  
+
+第二步每次都进入else分支  
+
+第三步不会进入if判断，因为我们模拟的数据hashCode是相等的，value是不相等的。  
+
+第四步在一开始的时候不会进入，因为刚开始的时候，槽位的类型是Node型，而不是TreeNode型  
+
+第五步会进入for循环，判断每一个Node节点的key、key的hashCode与传入的是否相等，相等退出循环，不相等插入到链表的末尾，并退出循环。就是在此处，判断链表是否满足树化条件（TREEIFY_THRESHOLD > 8 && MIN_TREEIFY_CAPACITY >= 64）  
+
+此时的HashMap对数组的利用率极低，像一个链表或树，只用到了HashMap的一个槽位。这也间接说明了hash函数的重要性。
+
+#### hash函数
+
+先看源码  
+
+![image-20201208100121052](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100121052.png)
+
+再看引用  
+
+![image-20201208100057689](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100057689.png)
+
+![image-20201208100034207](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100034207.png)
+
+
+
+学习位运算看这篇文章[位运算](./././other/位运算.md)
+
+
+
+
+
+#### 模拟一组不会发生hash碰撞Key，进行debug
 
 
 
