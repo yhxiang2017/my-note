@@ -91,32 +91,6 @@ public HashMap() {
 
 
 
-## 重要的方法
-
-```java
-// 根据key计算hash值，算法的精妙之处暂不分析 todo
-static final int hash(Object key) {
-    int h;
-    // HashMap的key一定要重写hashCode() 函数
-    return (key == null) ? 0 : (h = key.hashCode()) ^ (h >>> 16);
-}
-
-// 根据传入的初始容量计算 threahold ，todo
-static final int tableSizeFor(int cap) {
-    int n = cap - 1;
-    n |= n >>> 1;
-    n |= n >>> 2;
-    n |= n >>> 4;
-    n |= n >>> 8;
-    n |= n >>> 16;
-    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
-}
-
-
-```
-
-
-
 ## CRUD的执行流程
 
 
@@ -274,7 +248,9 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 
 
-#### 假如容量为16并且key的分布均匀，不会发生碰撞，每个key都只占一个槽位。分析下put()函数
+#### 分析put函数
+
+##### 1.假如容量为16并且key的分布均匀，不会发生碰撞，每个key都只占一个槽位
 
 第一步只会在第一次put时进行初始化。  
 
@@ -282,7 +258,7 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 最后直接来到第七步，判断是否达到扩容条件，此时的HashMap就好像是一个数组而已，对内存的利用率不高，会导致频繁扩容，但这只是我们的假如，哈哈哈哈。  
 
-#### 假如初始容量很小，导致一直发生碰撞，分析下put()函数
+##### 2.假如初始容量很小，导致一直发生碰撞
 
 第一步只会在第一次put时进行初始化。  
 
@@ -296,31 +272,93 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 此时的HashMap对数组的利用率极低，像一个链表或树，只用到了HashMap的一个槽位。这也间接说明了hash函数的重要性。
 
-#### hash函数
+##### 3.模拟一组不会发生hash碰撞Key，进行debug
 
-先看源码  
-
-![image-20201208162611657](源码分析之HashMap.assets/image-20201208162611657.png)
-
-再看引用  
-
-![image-20201208162644487](源码分析之HashMap.assets/image-20201208162644487.png)
-
-![image-20201208162710297](源码分析之HashMap.assets/image-20201208162710297.png)
-
-学习位运算看这篇文章[位运算](../../../other/位运算.md)
-
-
-
-
-
-#### 模拟一组不会发生hash碰撞Key，进行debug
-
-
+##### 4.模拟一组一直发生hash碰撞的key，进行debug
 
 ### HashMap的remove()方法
 
 
+
+## 重要的方法
+
+### tableSizeFor方法
+
+```java
+// 根据传入的初始容量计算 threahold ，todo
+static final int tableSizeFor(int cap) {
+    int n = cap - 1;
+    n |= n >>> 1;
+    n |= n >>> 2;
+    n |= n >>> 4;
+    n |= n >>> 8;
+    n |= n >>> 16;
+    return (n < 0) ? 1 : (n >= MAXIMUM_CAPACITY) ? MAXIMUM_CAPACITY : n + 1;
+}
+```
+
+### hash函数
+
+先看源码  
+
+<img src="源码分析之HashMap.assets/image-20201208162611657.png" alt="image-20201208162611657" style="zoom:50%;" />
+
+再看引用  
+
+<img src=" 源码分析之HashMap.assets/image-20201208162644487.png" alt="image-20201208162644487" style="zoom:50%;" />
+
+<img src=" 源码分析之HashMap.assets/image-20201208162710297.png" alt="image-20201208162710297" style="zoom:50%;" />
+
+> ps：学习位运算看这篇文章[位运算](../../../other/位运算.md)
+
+
+
+- 如果key为null，hash为0
+- 否则
+  - 先取出key的hashCode赋给h
+  - 再将h无符号右移16位
+  - 最后将前两部得到的值进行与或运算
+- `(n - 1) & hash` 寻址
+
+
+
+举例说明：
+
+1. 拿`a`来当做本次的key，`a`的hashCode是`97`它的二进制是：
+
+`0000 0000 0000 0000 0000 0000 0110 0001`
+
+2. 无符号右移`>>>`后得到：
+
+`0000 0000 0000 0000 0000 0000 0000 0000`
+
+3. 异或(^)运算后得到：
+
+`0000 0000 0000 0000 0000 0000 0110 0001`
+
+最后通过hash计算得到的散列值还是`97`
+
+4. 解析`(n - 1) & hash` 
+
+   由代码的上下文可知，`n`是数组长度,`table.length`在第一次初始化时，数组的默认长度为16，`hash`就是刚刚计算得到的`97`
+
+   (n - 1) = 15：`0000 0000 0000 0000 0000 0000 0000 1111`
+
+   ​										**&**
+
+   Hash : 		  `0000 0000 0000 0000 0000 0000 0110 0001`
+
+   得：	  	    `0000 0000 0000 0000 0000 0000 0000 0001`
+
+5. 得到下标`1`
+
+分析一下：
+
+**1. 最终结果就是将 key 的hashCode高 16 位 和低 16位进行了异或运算。**
+
+**2. 达到的效果就是混合原始哈希码的高位和低位，以此来加大低位的随机性。**
+
+**3. 顺带着，低 16 位可以同时拥有高 16 位的信息。**
 
 ## 内部类
 
