@@ -6,7 +6,7 @@
 
 ## 静态字段
 
-```java
+```
 // 默认初始容量16
 static final int DEFAULT_INITIAL_CAPACITY = 1 << 4;// aka 16
 
@@ -24,13 +24,6 @@ static final int UNTREEIFY_THRESHOLD = 6;
 
 // 当table的长度大于等于64时，才执行树化。由下图可以看到，小于64时，会对HashMap进行扩容。
 static final int MIN_TREEIFY_CAPACITY = 64;
-```
-
-![image-20201208093313731](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208093313731.png)
-
-## 成员变量
-
-```java
 // 存放数据的Node数组
 transient Node<K,V>[] table;
 
@@ -50,16 +43,6 @@ int threshold;
 // 
 
 
-```
-
-
-
-
-
-
-## 构造器
-
-```java
 /**
  * 
  * 自定义初始容量和加载因子，并计算threshold
@@ -87,13 +70,6 @@ public HashMap(int initialCapacity) {
 public HashMap() {
     this.loadFactor = DEFAULT_LOAD_FACTOR; // all other fields defaulted
 }
-```
-
-
-
-## 重要的方法
-
-```java
 // 根据key计算hash值，算法的精妙之处暂不分析 todo
 static final int hash(Object key) {
     int h;
@@ -113,17 +89,6 @@ static final int tableSizeFor(int cap) {
 }
 
 
-```
-
-
-
-## CRUD的执行流程
-
-
-
-### HashMap的get()方法
-
-```java
 public V get(Object key) {
     Node<K,V> e;
     // 实质上是调用了内部方法getNode(int hash, Object key);
@@ -167,25 +132,6 @@ final Node<K,V> getNode(int hash, Object key) {
     }
     return null;
 }
-```
-
-
-
-① 第一步通过判断 tab不为null、长度大于0和链表的第一个值不为null来确定是否要继续
-
-② 第二部通过判断第一个链表头结点是否与传入的key相等，相等则直接返回。通过这个判断得知，**HashMap的key必须要重写hashCode() 函数和equals() 函数**  
-
-③ 判断链表的长度是否大于1，如果等于1并且传入的key，与链表头结点的key不相等则返回null
-
-④ 如果该链表是树，则用树的方式获取。等我学完红黑树再展开讨论， **TODO**
-
-⑤ do {} while() 循环并比较key
-
-
-
-### HashMap的put()方法
-
-```java
  public V put(K key, V value) {
      // 实质上是调用了内部方法putVal(int hash, K key, V value, boolean onlyIfAbsent, boolean evict);
      return putVal(hash(key), key, value, false, true);
@@ -263,64 +209,9 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 }
 ```
 
-① 判断当前table是否初始化，如果未初始化，则调用resize() 进行初始化后再执行后续操作  
-② 判断当前槽位是否为null，为null说明没有发生过hash碰撞，直接newNode()赋值。  
-③ 进入else分支，说明发生了hash碰撞，需要进一步比较，首先依据传入的key与链表第一个节点key是否相等，相等赋值给临时变量，直接进入第⑥步  
-④ 其次判断是否是树，是则用树的方式插入，然后返回当前节点 **TODO** ，进入第⑥步  
-⑤ 循环链表，找到相等的key，则结束循环进入第⑥步。没有则在链表末端插入，然后判断链表是否可以转化为树**TODO ** 
-⑥ 是否替换旧值为新值，默认替换掉  
-⑦ 判断是否达到扩容条件  
-⑧ 不知道啥意思，哈哈哈**TODO**  
 
 
 
-#### 假如容量为16并且key的分布均匀，不会发生碰撞，每个key都只占一个槽位。分析下put()函数
-
-第一步只会在第一次put时进行初始化。  
-
-第二步每次都进入，并不会进入else分支。  
-
-最后直接来到第七步，判断是否达到扩容条件，此时的HashMap就好像是一个数组而已，对内存的利用率不高，会导致频繁扩容，但这只是我们的假如，哈哈哈哈。  
-
-#### 假如初始容量很小，导致一直发生碰撞，分析下put()函数
-
-第一步只会在第一次put时进行初始化。  
-
-第二步每次都进入else分支  
-
-第三步不会进入if判断，因为我们模拟的数据hashCode是相等的，value是不相等的。  
-
-第四步在一开始的时候不会进入，因为刚开始的时候，槽位的类型是Node型，而不是TreeNode型  
-
-第五步会进入for循环，判断每一个Node节点的key、key的hashCode与传入的是否相等，相等退出循环，不相等插入到链表的末尾，并退出循环。就是在此处，判断链表是否满足树化条件（TREEIFY_THRESHOLD > 8 && MIN_TREEIFY_CAPACITY >= 64）  
-
-此时的HashMap对数组的利用率极低，像一个链表或树，只用到了HashMap的一个槽位。这也间接说明了hash函数的重要性。
-
-#### hash函数
-
-先看源码  
-
-![image-20201208100121052](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100121052.png)
-
-再看引用  
-
-![image-20201208100057689](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100057689.png)
-
-![image-20201208100034207](/Users/xyh/Desktop/my-note/source/java.util/map/源码分析之HashMap.assets/image-20201208100034207.png)
-
-
-
-学习位运算看这篇文章[位运算](./././other/位运算.md)
-
-
-
-
-
-#### 模拟一组不会发生hash碰撞Key，进行debug
-
-
-
-### HashMap的remove()方法
 
 
 
@@ -328,7 +219,92 @@ final V putVal(int hash, K key, V value, boolean onlyIfAbsent,
 
 
 
+### HashMap的remove()方法
+
+
+
+#### 模拟一组不会发生hash碰撞Key，进行debug
 
 
 
 
+
+学习位运算看这篇文章[位运算](../../../other/位运算.md)
+
+
+
+![image-20201208100034207](file:///Users/xyh/Desktop/my-note/source/java.util/map/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BHashMap.assets/image-20201208100034207.png?lastModify=1607415706)
+
+![image-20201208100057689](file:///Users/xyh/Desktop/my-note/source/java.util/map/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BHashMap.assets/image-20201208100057689.png?lastModify=1607415706)
+
+再看引用  
+
+![image-20201208100121052](file:///Users/xyh/Desktop/my-note/source/java.util/map/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BHashMap.assets/image-20201208100121052.png?lastModify=1607415706)
+
+先看源码  
+
+#### hash函数
+
+此时的HashMap对数组的利用率极低，像一个链表或树，只用到了HashMap的一个槽位。这也间接说明了hash函数的重要性。
+
+第五步会进入for循环，判断每一个Node节点的key、key的hashCode与传入的是否相等，相等退出循环，不相等插入到链表的末尾，并退出循环。就是在此处，判断链表是否满足树化条件（TREEIFY_THRESHOLD > 8 && MIN_TREEIFY_CAPACITY >= 64）  
+
+第四步在一开始的时候不会进入，因为刚开始的时候，槽位的类型是Node型，而不是TreeNode型  
+
+第三步不会进入if判断，因为我们模拟的数据hashCode是相等的，value是不相等的。  
+
+第二步每次都进入else分支  
+
+第一步只会在第一次put时进行初始化。  
+
+#### 假如初始容量很小，导致一直发生碰撞，分析下put()函数
+
+最后直接来到第七步，判断是否达到扩容条件，此时的HashMap就好像是一个数组而已，对内存的利用率不高，会导致频繁扩容，但这只是我们的假如，哈哈哈哈。  
+
+第二步每次都进入，并不会进入else分支。  
+
+第一步只会在第一次put时进行初始化。  
+
+#### 假如容量为16并且key的分布均匀，不会发生碰撞，每个key都只占一个槽位。分析下put()函数
+
+
+
+① 判断当前table是否初始化，如果未初始化，则调用resize() 进行初始化后再执行后续操作   ② 判断当前槽位是否为null，为null说明没有发生过hash碰撞，直接newNode()赋值。   ③ 进入else分支，说明发生了hash碰撞，需要进一步比较，首先依据传入的key与链表第一个节点key是否相等，相等赋值给临时变量，直接进入第⑥步   ④ 其次判断是否是树，是则用树的方式插入，然后返回当前节点 **TODO** ，进入第⑥步   ⑤ 循环链表，找到相等的key，则结束循环进入第⑥步。没有则在链表末端插入，然后判断链表是否可以转化为树**TODO**   ⑥ 是否替换旧值为新值，默认替换掉   ⑦ 判断是否达到扩容条件   ⑧ 不知道啥意思，哈哈哈**TODO**  
+
+### HashMap的put()方法
+
+
+
+⑤ do {} while() 循环并比较key
+
+④ 如果该链表是树，则用树的方式获取。等我学完红黑树再展开讨论， **TODO**
+
+③ 判断链表的长度是否大于1，如果等于1并且传入的key，与链表头结点的key不相等则返回null
+
+② 第二部通过判断第一个链表头结点是否与传入的key相等，相等则直接返回。通过这个判断得知，**HashMap的key必须要重写hashCode() 函数和equals() 函数**  
+
+① 第一步通过判断 tab不为null、长度大于0和链表的第一个值不为null来确定是否要继续
+
+
+
+### HashMap的get()方法
+
+
+
+## CRUD的执行流程
+
+
+
+## 重要的方法
+
+
+
+## 构造器
+
+
+
+
+
+## 成员变量
+
+![image-20201208093313731](file:///Users/xyh/Desktop/my-note/source/java.util/map/%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90%E4%B9%8BHashMap.assets/image-20201208093313731.png?lastModify=1607415706)
