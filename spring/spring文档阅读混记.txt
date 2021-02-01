@@ -1,0 +1,21 @@
+1.spring容器
+
+  1.1 介绍spring ioc容器和 Beans
+
+
+  
+  1.2 容器预览
+  1.3 bean 预览
+  1.4 依赖
+  1.5 bean scopes
+  1.6 定制bean本质
+  1.7 bean definition 继承体系
+  1.8 容器扩展点
+  1.9 基于注解的容器配置
+  1.10 类路径扫描和管理组件
+  1.11 使用JSR 300 标准注解
+  1.12 基于java配置
+  1.13 环境抽象
+  1.14 注册 LoadTimeWeave
+  1.15 ApplicationContext 的附加功能
+  1.16 BeanFacory
